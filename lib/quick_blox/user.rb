@@ -14,7 +14,17 @@ module QuickBlox
           payload: {
               user: {
                 login: options[:login],
-                password: options[:password]
+                password: options[:password],
+                email: options[:email],
+                blob_id: options[:blob_id],
+                external_user_id: options[:external_user_id],
+                facebook_id: options[:facebook_id],
+                twitter_id: options[:twitter_id],
+                full_name: options[:full_name],
+                phone: options[:phone],
+                website: options[:website],
+                tag_list: options[:tag_list],
+                custom_data: options[:custom_data],
               }
           }.to_json,
           headers: {
@@ -60,6 +70,49 @@ module QuickBlox
             raise QuickBlox::Exceptions::ResourceNotFound
           else
             raise QuickBlox::Exceptions::Response, response['errors']
+        end
+      }
+    end
+
+    def self.update(application_session, options)
+
+      raise QuickBlox::Exceptions::MissingConfiguration unless QuickBlox.configuration
+
+      RestClient::Request.execute(
+          method: :put,
+          url: "#{ QuickBlox.configuration.host }/users/#{options[:qb_user_id]}.json",
+          payload: {
+              user: {
+                  blob_id: options[:blob_id],
+                  external_user_id: options[:external_user_id],
+                  facebook_id: options[:facebook_id],
+                  twitter_id: options[:twitter_id],
+                  full_name: options[:full_name],
+                  phone: options[:phone],
+                  website: options[:website],
+                  tag_list: options[:tag_list],
+                  custom_data: options[:custom_data],
+              }
+          }.to_json,
+          headers: {
+              'Content-Type': 'application/json',
+              'QuickBlox-REST-API-Version': QuickBlox.configuration.api_version,
+              'QB-Token': application_session.token
+          }
+      ){ |response, request, result|
+        response = JSON.parse(response)
+
+        case result.code.to_i
+        when 200
+          instance = QuickBlox::User.new
+          response['user'].each do |k, v|
+            instance.instance_variable_set "@#{k}", v
+          end
+          return instance
+        when 404
+          raise QuickBlox::Exceptions::ResourceNotFound
+        else
+          raise QuickBlox::Exceptions::Response, response['errors']
         end
       }
     end

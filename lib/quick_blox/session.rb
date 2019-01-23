@@ -20,8 +20,9 @@ module QuickBlox
     def initialize
       raise QuickBlox::Exceptions::MissingConfiguration unless QuickBlox.configuration
 
-      timestamp = Time.now.in_time_zone('UTC').to_i
-      nonce = timestamp - 425346
+      now = Time.now.in_time_zone('UTC').to_f
+      timestamp = now.to_i
+      nonce = now.to_s.split('.').last.to_i
       signature = HMAC::SHA1.hexdigest(QuickBlox.configuration.auth_secret, "application_id=#{ QuickBlox.configuration.application_id }&auth_key=#{ QuickBlox.configuration.auth_key }&nonce=#{ nonce }&timestamp=#{ timestamp }")
 
       RestClient::Request.execute(
